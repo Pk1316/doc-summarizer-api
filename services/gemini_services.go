@@ -3,10 +3,10 @@ package services
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"google.golang.org/genai"
 )
-
 
 type GeminiService struct {
 	apiKey string
@@ -15,7 +15,7 @@ type GeminiService struct {
 // NewGeminiService creates a new Gemini service
 func NewGeminiService(apiKey string) *GeminiService {
 	return &GeminiService{
-		apiKey: "AIzaSyARYidtIcJGpcSGpn6QsqDMn6ydMJcVwVA",
+		apiKey: os.Getenv("GEMINI_API_KEY"),
 	}
 }
 
@@ -23,7 +23,7 @@ func NewGeminiService(apiKey string) *GeminiService {
 func (s *GeminiService) ProcessFile(fileBytes []byte, mimeType string, prompt string) (string, error) {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
-		APIKey:  "AIzaSyARYidtIcJGpcSGpn6QsqDMn6ydMJcVwVA",
+		APIKey:  s.apiKey,
 		Backend: genai.BackendGeminiAPI,
 	})
 	if err != nil {
@@ -41,11 +41,11 @@ func (s *GeminiService) ProcessFile(fileBytes []byte, mimeType string, prompt st
 		genai.NewPartFromText(prompt),
 	}
 	contents := []*genai.Content{
-	{
-		Parts: parts,
-		Role:  "user",
-	},
-}
+		{
+			Parts: parts,
+			Role:  "user",
+		},
+	}
 
 	result, err := client.Models.GenerateContent(
 		ctx,
@@ -58,8 +58,8 @@ func (s *GeminiService) ProcessFile(fileBytes []byte, mimeType string, prompt st
 	}
 
 	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
-	return "", fmt.Errorf("no response from Gemini")
-}
+		return "", fmt.Errorf("no response from Gemini")
+	}
 	summary := result.Candidates[0].Content.Parts[0].Text
 
 	return summary, nil
